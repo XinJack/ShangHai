@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>热力图-基于高德地图的实现</title> 
+	<link rel="stylesheet" type="text/css" href="Scripts/css/bootstrap.css">
+	<link rel="stylesheet" type="text/css" href="Scripts/css/easy-tree.css">
+	<style type="text/css">
+		*{
+			box-sizing:border-box;
+		}
+		nav{
+			width:25%;
+			font-family:"Microsoft YaHei";
+			font-size:1.2em;
+			z-index:400;
+			left:-25%;
+			top:0;
+			overflow:scroll;
+		}
+
+		span.controler{
+			position:absolute;
+			left:0px;
+			top:40%;
+			background-color:#e56155;
+			font-size:2em;
+			color:white;
+			line-height:4em;
+			border-radius:0 4px 4px 0;
+			padding:0 10px;
+			cursor:pointer;
+			z-index:400;
+		}
+
+		#mapDiv{
+			position:absolute;
+			left:0px;
+			top:0px;
+		}
+	</style>
+	<script src="http://webapi.amap.com/maps?v=1.3&key=aa75a32f7d2e8c146e40165b1b4842b6"></script>
+	<script type="text/javascript" src="Scripts/js/jquery.js"></script>
+	<script type="text/javascript" src="Scripts/js/bootstrap.js"></script>
+	<script type="text/javascript" src="Scripts/js/easy-tree.js"></script>
+</head>
+<body>
+	<nav class="col-md-3 easy-tree">
+		<ul>
+			<li>城市地图板块
+				<ul>
+					<li>GIS功能
+						<ul>
+							<li id="toggleheatmap">热力图</li>
+							<li>可达性</li>
+							<li>配套设置</li>
+						</ul>
+					</li>
+					<li>基础信息功能</li>
+					<li>土地属性</li>
+				</ul>
+			</li>
+			<li>一二手房供应成交平台板块
+				<ul>
+					<li>一手房</li>
+					<li>二手房</li>
+				</ul>
+			</li>
+			<li>离散分析板块</li>
+			<li>案场客群描摹板块</li>
+			<li>离散分析板块</li>
+			<li>案场客群描摹板块</li>
+			<li>离散分析板块</li>
+			<li>案场客群描摹板块</li>
+			<li>离散分析板块</li>
+			<li>案场客群描摹板块</li>
+			<li>离散分析板块</li>
+			<li>案场客群描摹板块</li>
+			<li>离散分析板块</li>
+			<li>案场客群描摹板块</li>
+			<li>离散分析板块</li>
+			<li>案场客群描摹板块</li>
+			<li>离散分析板块</li>
+			<li>案场客群描摹板块</li>
+		</ul>
+	</nav>
+	<span class="controler glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+	<div id="mapDiv"></div>
+</body>
+<script type="text/javascript">
+	$(document).ready(function(){
+		init();
+		//地图限制范围
+		//西南坐标[120.615699,30.504159]
+		//东北坐标[122.436683,31.822592]
+		var map = new AMap.Map("mapDiv",{
+			resizeEnable: true,
+			zoom:10,
+			zooms:[9,16],
+			center:[121.473701,31.230416]
+		});
+		//限制地图的显示范围
+		var limitBound = new AMap.Bounds(new AMap.LngLat(120.615699, 30.504159), new AMap.LngLat(122.436683,31.822592));
+		map.setLimitBounds(limitBound);
+		//热力图
+		var heatmap;
+		var heatmapdata = [
+			{lng:121.455965, lat:31.223428, count: 246788},//静安区
+			{lng:121.484443, lat:31.231763, count: 429891},//黄浦区
+			{lng:121.424624, lat:31.220367 , count: 690571},//长宁区
+			{lng:121.397417, lat:31.623587, count: 703722},//崇明县
+			{lng:121.34197, lat:30.741991, count: 732410},//金山区 
+			{lng:121.459384, lat:31.247105, count: 830476},//闸北区
+			{lng:121.505133, lat:31.2646, count: 852476},//虹口区
+			{lng:121.124178, lat:31.150681, count: 1081022},//青浦区
+			{lng:121.474042, lat:30.917795, count: 1083463},//奉贤区
+			{lng:121.436525, lat:31.188523, count: 1085130},//徐汇区
+			{lng:121.395555, lat:31.24984, count: 1288881},//普陀区
+			{lng:121.526077, lat:31.259541, count: 1313222},//杨浦区
+			{lng:121.2653, lat:31.375602, count: 1471231},//嘉定区
+			{lng:121.227747, lat:31.032243, count: 1532898},//松江区
+			{lng:121.489612, lat:31.405457, count: 1904886},//宝山区
+			{lng:121.381709, lat:31.112813, count: 2429372},//闵行区
+			{lng:121.544379, lat:31.221517, count: 5044430}//浦东新区
+		];
+		//showHeatMap(map);
+		showHeatMap(map, heatmap, heatmapdata);
+		
+	});
+
+	function showHeatMap(map, heatmap,heatmapData){
+		map.plugin(["AMap.Heatmap"], function() {
+        	//初始化heatmap对象
+        	heatmap = new AMap.Heatmap(map, {
+           		radius: 25, //给定半径
+            	opacity: [0, 0.8]
+        	});
+        	//绑定数据
+         	heatmap.setDataSet({
+            	data: heatmapData,
+            	max: 5044430
+       		});
+		});
+		//初始化时先关闭热力图
+		heatmap.hide();
+		var isHide = true;
+		$("li#toggleheatmap a").on("click", function(){
+			if(isHide){
+				heatmap.show();
+				isHide = false;
+			}else{
+				heatmap.hide();
+				isHide = true;
+			}
+		});
+	}
+
+	function init(){
+		$(window).on("resize",function(){
+			setMapSize();
+		});
+		//设置地图大小
+		setMapSize();
+		//初始化树
+		$("nav.easy-tree").EasyTree();
+		//树结构的显示和隐藏
+		$("span.controler").on("click", function(){
+			if($(this).hasClass("glyphicon-chevron-right")){
+				$("nav").css("left", 0);
+				$(this).css("left", "25%");
+				//将展开图标变成收回图标
+				$(this).removeClass("glyphicon-chevron-right").addClass("glyphicon-chevron-left");
+			}else{
+				$("nav").css("left", "-25%");
+				$(this).css("left", 0);
+				//将收回图标变成展开图标
+				$(this).removeClass("glyphicon-chevron-left").addClass("glyphicon-chevron-right");
+			}
+		});
+	};
+
+	function setMapSize(){
+		$("div#mapDiv").css("width", window.innerWidth);
+		$("div#mapDiv").css("height", window.innerHeight);
+		$("nav").css("height", window.innerHeight);
+	}
+</script>
+</html>

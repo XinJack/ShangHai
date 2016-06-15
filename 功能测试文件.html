@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  	<meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no">
+	<title>功能测试</title>
+	<!-- link rel="stylesheet" href="http://192.168.0.24:80/Scripts/3.14/dijit/themes/tundra/tundra.css" -->  
+	<!-- link rel="stylesheet" href="http://192.168.0.24:80/Scripts/3.14/esri/css/esri.css" --> 
+	<link rel="stylesheet" href="http://202.121.178.190:80/Scripts/3.14/dijit/themes/tundra/tundra.css">  
+	<link rel="stylesheet" href="http://202.121.178.190:80/Scripts/3.14/esri/css/esri.css"> 
+	<link rel="stylesheet" type="text/css" href="Scripts/css/bootstrap.css">
+	<link rel="stylesheet" type="text/css" href="Scripts/css/easy-tree.css">
+	<style type="text/css">
+		*{
+			box-sizing:border-box;
+		}
+		nav{
+			width:25%;
+			font-family:"Microsoft YaHei";
+			font-size:1.2em;
+			z-index:400;
+			left:-25%;
+			top:0;
+			overflow:scroll;
+		}
+
+		span.controler{
+			position:absolute;
+			left:0px;
+			top:40%;
+			background-color:#e56155;
+			font-size:2em;
+			color:white;
+			line-height:4em;
+			border-radius:0 4px 4px 0;
+			padding:0 10px;
+			cursor:pointer;
+			z-index:400;
+		}
+
+		#mapDiv{
+			position:absolute;
+			left:0px;
+			top:0px;
+		}
+
+		.legend{	
+			position:absolute;
+			right:5%;
+			bottom:10%;
+			background-color:white;
+			width:100px;
+			height:200px;
+			font-family:"Microsoft YaHei";
+			border-radius: 5px;
+			display:none;
+		}
+	</style>
+	<!-- script type="text/javascript" src="http://192.168.0.24:80/Scripts/3.14/init.js"></script -->
+	<script type="text/javascript" src="http://202.121.178.190:80/Scripts/3.14/init.js"></script>
+	<script type="text/javascript" src="Scripts/js/jquery.js"></script>
+	<script type="text/javascript" src="Scripts/js/bootstrap.js"></script>
+	<script type="text/javascript" src="Scripts/js/easy-tree.js"></script>
+</head>
+<body>
+	<nav class="col-md-3 easy-tree">
+		<ul>
+			<li>城市地图板块
+				<ul>
+					<li>GIS功能
+						<ul>
+							<li id="subwayMorningOutHeatmap">地铁人流量（早上出发）</li>
+							<li id="subwayMorningInHeatmap">地铁人流量（早上到达）</li>
+							<li id="subwayEveningOutHeatmap">地铁人流量（晚上出发）</li>
+							<li id="subwayEveningInHeatmap">地铁人流量（晚上到达）</li>
+							<li id="area">可达性</li>
+							<li id="facilities">配套设置</li>
+						</ul>
+					</li>
+					<li>基础信息功能</li>
+					<li>土地属性</li>
+				</ul>
+			</li>
+			<li>一二手房供应成交平台板块
+				<ul>
+					<li>一手房</li>
+					<li>二手房</li>
+				</ul>
+			</li>
+		</ul>
+	</nav>
+	<span class="controler glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+	<div id="mapDiv"></div>
+	<div class="legend"><div id="subwayMorningOutLegendDiv"></div></div>
+	<div class="legend"><div id="subwayMorningInLegendDiv"></div></div>
+	<div class="legend"><div id="subwayEveningOutLegendDiv"></div></div>
+	<div class="legend"><div id="subwayEveningInLegendDiv"></div></div>
+</body>
+<script type="text/javascript" src="Scripts/ShanghaiFinal.js"></script>
+<script type="text/javascript">
+//192.168.0.24:80/
+	var shanghai = new Shanghai();
+	//shanghai.getDriveTimePolygon();
+	shanghai.initializeMap("mapDiv");
+	var event;
+	$(document).ready(function(){
+		$("div#mapDiv").css("width", window.innerWidth);
+		$("div#mapDiv").css("height", window.innerHeight);
+		$("nav").css("height", window.innerHeight);
+		//初始化目录树
+		$("nav.easy-tree").EasyTree();
+		//树结构的显示和隐藏事件
+		$("span.controler").on("click", function(){
+			if($(this).hasClass("glyphicon-chevron-right")){
+				$("nav").css("left", 0);
+				$(this).css("left", "25%");
+				//将展开图标变成收回图标
+				$(this).removeClass("glyphicon-chevron-right").addClass("glyphicon-chevron-left");
+			}else{
+				$("nav").css("left", "-25%");
+				$(this).css("left", 0);
+				//将收回图标变成展开图标
+				$(this).removeClass("glyphicon-chevron-left").addClass("glyphicon-chevron-right");
+			}
+		});
+		setTimeout(function(){
+			$("li#facilities a").on("click",function(){
+				event = shanghai.findFacilities(1000, {"科研教育": ["小学", "大学", "中学"], "医疗服务": ["综合型医院", "卫生服务中心"], "交通出行": ["汽车站","地铁"], "餐饮":[], "大厦":[]});
+				//shanghai.testFindFacilities(1000,"科研教育");
+			});
+			$("li#subwayMorningOutHeatmap a").on("click", function(){
+				shanghai.createHeatmapAndLegend("SubwayHeatmapUrl", 20, "d_even_18", "地铁人流量（18号晚上到达）", "subwayMorningOutLegendDiv", "SubwayMorningOutLegend");
+				$("div.legend").show("slow");
+				$("div#subwayMorningOutLegendDiv").parent().css("z-index","400");
+			});
+			$("li#area a").on("click", function(){
+				console.log("testDriveTimePolygon");
+				shanghai.getDriveTimePolygon("1 3 7");
+			});
+		},1000);
+		
+	});
+</script>
+</html>

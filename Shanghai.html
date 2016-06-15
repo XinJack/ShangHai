@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Wanke Website</title>
+		<link rel="stylesheet" href="http://192.168.0.24:80/Scripts/3.14/dijit/themes/tundra/tundra.css">  
+		<link rel="stylesheet" href="http://192.168.0.24:80/Scripts/3.14/esri/css/esri.css"> 
+		<style type="text/css">
+			*{
+				margin:0;padding:0;
+			}
+			body div#mapDiv+div{
+				position:absolute;
+				left:5%;
+				top:5%;
+				z-index:40;
+			}
+		</style>
+		<script type="text/javascript" src="http://192.168.0.24:80/Scripts/3.14/init.js"></script>
+		<script type="text/javascript" src="Scripts/js/jquery.js"></script>
+	</head>
+	<body>
+		<div id="mapDiv"></div>
+		<div>
+			<input type="text" id="timeSpan"/>
+			<input type="button" value="确定" id="getServiceArea"/>
+		</div>
+	</body>
+	<script type="text/javascript">
+		function Wanke(){
+		};
+    
+		//初始化地图
+		Wanke.prototype.initializeMap = function(){
+			setFullMapSize();
+			$(window).on("resize",function(){
+				setFullMapSize();
+			});
+			//设置地图大小填充整个窗口
+			function setFullMapSize(){
+				$("div#mapDiv").css("width", window.innerWidth);
+				$("div#mapDiv").css("height",window.innerHeight);
+			};
+			require(["esri/map", "esri/layers/ArcGISTiledMapServiceLayer", "esri/geometry/Extent","esri/SpatialReference"],
+			function(Map, ArcGISTiledMapServiceLayer,Extent, SpatialReference){
+				map = new Map("mapDiv",{basemap:"streets", center: [-95.255, 38.96],zoom: 13});
+				//map = new Map("mapDiv",{extent: new Extent(120.8599508903131,31.122347889012865,122.11833818012421,31.541810318949906, new SpatialReference(4326))});
+				//var layer = new ArcGISTiledMapServiceLayer("http://localhost:6080/arcgis/rest/services/万科_上海地图/MapServer");
+				//map.addLayer(layer);
+			});
+		};
+    
+		//获取基于路网的可达性
+		Wanke.prototype.getReacheableArea = function(map, way, timeSpan){
+			require(["esri/tasks/Geoprocessor","esri/symbols/SimpleMarkerSymbol",
+			"esri/symbols/SimpleLineSymbol","esri/Color","esri/graphic","esri/tasks/FeatureSet",
+			"esri/symbols/SimpleFillSymbol","dojo/domReady!"
+			], 
+			function(Geoprocessor, SimpleMarkerSymbol,SimpleLineSymbol,Color,Graphic,
+			FeatureSet,SimpleFillSymbol){
+				gp = new esri.tasks.Geoprocessor("https://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Network/ESRI_DriveTime_US/GPServer/CreateDriveTimePolygons");
+				//地图点击事件
+				map.on("click", getServiceArea);
+          
+				function getServiceArea(event){
+					//清除地图上原有的叠加层
+					map.graphics.clear();
+					//将用户选择的点在地图上以标志物的形式绘制
+					var point = new SimpleMarkerSymbol();
+					point.setOutline(new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color([255,0,0]),1));
+					point.setColor(new Color([255,0,0,0.25]));
+					point.setSize(12);
+					var graphic = new Graphic(event.mapPoint, point);
+					map.graphics.add(graphic);
+            
+					//用户选择的点是地理处理的一个参数
+					var features = [];
+					features.push(graphic);
+					var featureSet = new FeatureSet();
+					featureSet.features = features;
+					//执行地理处理
+					gp.execute({Input_Location: featureSet, Drive_Times: timeSpan}, drawArea);
+				};
+          
+				//绘制可达区域
+				function drawArea(results,messages){
+					var reachableArea = results[0].value.features[0];
+					var areaSymbol = new SimpleFillSymbol();
+					areaSymbol.setColor(new Color([0, 255, 0, 0.5]));
+					reachableArea.setSymbol(areaSymbol);
+					map.graphics.add(reachableArea);
+				};
+			});
+		};
+		
+		var map, gp;
+		var wanke = new Wanke();
+		wanke.initializeMap();
+		$("input#getServiceArea").on("click",function(){
+			var timeSpan = $("input#timeSpan").val();
+			wanke.getReacheableArea(map, "", timeSpan);
+		});
+		
+	</script>
+</html>
